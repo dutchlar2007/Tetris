@@ -49,6 +49,29 @@ function map:isFilled(x,y)
   return map[y] and map[y][x] and map[y][x] ~= 0
 end
 
+
+---------------------------------------------------------------
+
+function map:isLineFilled(y)
+  for x = 1, #map[y] do
+    if not map:isFilled(x,y) then return false end
+  end
+  return true
+end
+---------------------------------------------------------------
+
+---------------------------------------------------------------
+function map:dropLine()
+  for y = 1, 20 do
+    if map:isLineFilled(y) then
+      for i = y, 2, -1 do 
+        map[i] = map[i - 1]
+      end 
+      map[1] = {0,0,0,0,0,0,0,0,0,0}
+    end
+  end
+end
+
 ---------------------------------------------------------------
 function map:draw()
   for Y = 1 , #self do 
@@ -60,7 +83,7 @@ function map:draw()
 end
 
 --=============================================================================
-local score = {points = 0, speed = 1}
+local score = {points = 0, speed = 1.5}
 --=============================================================================
 local block = {dtotal = 0, x = 5, y = 1, dx  = {}, dy = {}, reset = 1, color=7}
 
@@ -118,10 +141,17 @@ end
 
 ---------------------------------------------------------------
 
-function block:clockwise(x,y)
-  return -y, x
+function block:clockwise()
+  for i = 2,4 do
+    self.dx[i], self.dy[i] = -self.dy[i], self.dx[i]
+  end
 end
 
+function  block:counterClock()
+  for i = 2,4 do
+    self.dx[i], self.dy[i] = self.dy[i], -self.dx[i]
+  end  
+end
 ---------------------------------------------------------------
 
 function block:draw()
@@ -179,7 +209,7 @@ block:formation()
 
 --=============================================================================
 --=============================================================================
-love.graphics.setBackgroundColor(160, 0, 255, 1)
+love.graphics.setBackgroundColor(0.6, 0.6, 0.6)
 
 function love.draw()
   map:draw()
@@ -189,6 +219,7 @@ end
 ---------------------------------------------------------------
 function love.update(dt)
   block:update(dt)
+  map:dropLine()
 end
 
 ---------------------------------------------------------------
@@ -213,8 +244,19 @@ function love.keypressed(key)
     block.x = block.x + 1
     ::skip2::
   end
+  if key == 'up' then
+    block:counterClock()
+  end
+  if key == 'down' then
+    block:clockwise()
+  end
+  xmin = math.min(unpack(block.dx)) + block.x - 1
+  xmax = math.max(unpack(block.dx)) + block.x - 10
+  if xmin < 0 then block.x = block.x - xmin end 
+  if xmax > 0 then block.x = block.x - xmax end
 end
 
 function love.load(arg)
+  math.randomseed(os.time())
   if arg[#arg] == "-debug" then require("mobdebug").start() end
 end
