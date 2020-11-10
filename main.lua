@@ -2,7 +2,9 @@ local dtotal = 0
 if unpack == nil then
   unpack = table.unpack
 end
-
+tetris = love.audio.newSource('tetris.mp3', 'stream')
+local score
+tetris:setLooping( true )
 --=============================================================================
 local colors = {                        -- The format for items is {R,G,B, 'Color'}
   {255,0,0,1},     -- Red 
@@ -10,13 +12,12 @@ local colors = {                        -- The format for items is {R,G,B, 'Colo
   {0,0,255,1},     -- Blue
   {255,255,0,1},   -- Yellow
   {255,0,255,1},   -- Purple
-  {255,165,0,1},   -- Orange
+  {1,.5,0,1},   -- Orange
   {0,255,255,1},   -- Aqua 
 }
 colors[0] = {0,0,0, 1} -- Black
 
 --=============================================================================
-
 
 local map = {
   {0,0,0,0,0,0,0,0,0,0},
@@ -58,17 +59,21 @@ function map:isLineFilled(y)
   end
   return true
 end
----------------------------------------------------------------
 
 ---------------------------------------------------------------
 function map:dropLine()
+  local dropped = 0
   for y = 1, 20 do
     if map:isLineFilled(y) then
+      dropped = dropped + 1
       for i = y, 2, -1 do 
         map[i] = map[i - 1]
       end 
       map[1] = {0,0,0,0,0,0,0,0,0,0}
     end
+  end
+  if dropped > 0 then 
+    score:Lines(dropped)
   end
 end
 
@@ -83,13 +88,29 @@ function map:draw()
 end
 
 --=============================================================================
-local score = {points = 0, speed = 1.5}
+score = {points = 0, speed = 1, numLines = 0}
+
+---------------------------------------------------------------
+
+function score:Lines(dropped)
+  local scores = {100, 300, 600, 1000}
+  self.points = self.points + scores[dropped]
+  self.numLines = self.numLines + dropped
+  self.speed = 0.8^(self.numLines/5)
+end
+
+---------------------------------------------------------------
+function score:draw()
+  love.graphics.print(string.format('Score: %d', self.points), 600, 150, 0, 2,2)
+end
+
+---------------------------------------------------------------
 --=============================================================================
-local block = {dtotal = 0, x = 5, y = 1, dx  = {}, dy = {}, reset = 1, color=7}
+local block = {dtotal = 0, x = 5, y = 1, dx  = {}, dy = {}, reset = 1, color = math.random(1,7)}
 
 function block:update(dt)
   self.dtotal = self.dtotal + dt
-  if self.dtotal >= 1/score.speed then
+  if self.dtotal >= score.speed then
     self.y = math.min(20, self.y + 1)
     self.dtotal = 0
     return dtotal
@@ -210,10 +231,11 @@ block:formation()
 --=============================================================================
 --=============================================================================
 love.graphics.setBackgroundColor(0.6, 0.6, 0.6)
-
+love.audio.play(tetris)
 function love.draw()
   map:draw()
   block:draw()
+  score:draw()
 end
 
 ---------------------------------------------------------------
@@ -243,6 +265,11 @@ function love.keypressed(key)
     end
     block.x = block.x + 1
     ::skip2::
+  end
+  if key == 'space' then
+    repeat
+     block.y = block.y+1
+    until block:collision()
   end
   if key == 'up' then
     block:counterClock()
