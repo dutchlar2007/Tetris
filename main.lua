@@ -8,7 +8,9 @@ local upcoming = {}
 local block
 local gameOver = false
 tetris:setLooping( true )
+
 --=============================================================================
+
 local colors = {                        -- The format for items is {R,G,B, 'Color'}
   {255,0,0,1},     -- Red 
   {0,255,0,1},     -- Green
@@ -43,8 +45,14 @@ local map = {
   {0,0,0,0,0,0,0,0,0,0},
   {0,0,0,0,0,0,0,0,0,0},
   {0,0,0,0,0,0,0,0,0,0},
-  size = 30
+  size = 30,
+  listener = nil
 }
+
+---------------------------------------------------------------
+function map:lineDropListener(listener)
+  self.listener = listener
+end
 
 ---------------------------------------------------------------
 function map:isFilled(x,y)
@@ -75,8 +83,8 @@ function map:dropLine()
       map[1] = {0,0,0,0,0,0,0,0,0,0}
     end
   end
-  if dropped > 0 then 
-    score:Lines(dropped)
+  if dropped > 0 and self.listener then 
+    self.listener:Lines(dropped)
   end
 end
 
@@ -337,5 +345,6 @@ function love.load(arg)
   for i = 1, 4 do
     Block.new()
   end
+  map:lineDropListener(score)
   block = table.remove(upcoming, 1)
 end
