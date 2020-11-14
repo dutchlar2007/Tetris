@@ -106,9 +106,18 @@ end
 
 ---------------------------------------------------------------
 --=============================================================================
-local block = {dtotal = 0, x = 5, y = 1, dx  = {}, dy = {}, reset = 1, color = math.random(1,7)}
+local Block = {}
 
-function block:update(dt)
+Block.__index = Block
+
+function Block.new()
+  local block = {dtotal = 0, x = 5, y = 1, dx  = {}, dy = {}, reset = 1, color = math.random(1,7)}
+  setmetatable(block, Block)
+  block:formation()
+  return block
+end
+
+function Block:update(dt)
   self.dtotal = self.dtotal + dt
   if self.dtotal >= score.speed then
     self.y = math.min(20, self.y + 1)
@@ -119,19 +128,19 @@ end
 
 ---------------------------------------------------------------
 
-function block:getX(i)
+function Block:getX(i)
   return self.x + self.dx[i]
 end
 
 ---------------------------------------------------------------
 
-function block:getY(i)
+function Block:getY(i)
   return self.y + self.dy[i]
 end
 
 ---------------------------------------------------------------
 
-function block:collision()
+function Block:collision()
   for i = 1, 4 do
     if self:getY(i) >= 20 then 
       self.reset = true
@@ -151,7 +160,7 @@ end
 
 ---------------------------------------------------------------
 
-function block:setBlock()
+function Block:setBlock()
   for i = 1, 4 do
     local y, x = self:getY(i), self:getX(i)
     if not map:isFilled(x, y) then
@@ -162,26 +171,26 @@ end
 
 ---------------------------------------------------------------
 
-function block:clockwise()
+function Block:clockwise()
   for i = 2,4 do
     self.dx[i], self.dy[i] = -self.dy[i], self.dx[i]
   end
 end
 
-function  block:counterClock()
+function  Block:counterClock()
   for i = 2,4 do
     self.dx[i], self.dy[i] = self.dy[i], -self.dx[i]
   end  
 end
 ---------------------------------------------------------------
 
-function block:draw()
+function Block:draw()
   local size = map.size
-  if block:collision() then 
-    block:setBlock()
+  if self:collision() then 
+    self:setBlock()
   end
   if self.reset then
-    block:formation()
+    self:formation()
   end
   love.graphics.setColor(unpack(colors[self.color]))
   for i = 1, 4 do
@@ -190,7 +199,7 @@ function block:draw()
 end
   
 ---------------------------------------------------------------
-function block:formation()
+function Block:formation()
   self.color = math.random(1,7)
   if self.color == 1 then
     self.dx = {0,-1,0,1}
@@ -224,7 +233,8 @@ function block:formation()
   self.y = 0
   self.reset = false
 end
-block:formation()
+
+local block = Block.new()
 
 ---------------------------------------------------------------
 
