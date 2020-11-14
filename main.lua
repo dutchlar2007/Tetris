@@ -4,6 +4,9 @@ if unpack == nil then
 end
 tetris = love.audio.newSource('tetris.mp3', 'stream')
 local score
+local upcoming = {}
+local block
+local gameOver = false
 tetris:setLooping( true )
 --=============================================================================
 local colors = {                        -- The format for items is {R,G,B, 'Color'}
@@ -104,18 +107,22 @@ function score:draw()
   love.graphics.print(string.format('Score: %d', self.points), 600, 150, 0, 2,2)
 end
 
----------------------------------------------------------------
 --=============================================================================
-local Block = {}
+local Block = {dtotal = 0, reset = 1}
 
 Block.__index = Block
 
+---------------------------------------------------------------
+
 function Block.new()
-  local block = {dtotal = 0, x = 5, y = 1, dx  = {}, dy = {}, reset = 1, color = math.random(1,7)}
+  local block = {x = 5, y = 1, dx  = {}, dy = {}, color = math.random(1,7)}
   setmetatable(block, Block)
   block:formation()
+  table.insert(upcoming, block)
   return block
 end
+
+---------------------------------------------------------------
 
 function Block:update(dt)
   self.dtotal = self.dtotal + dt
@@ -124,6 +131,15 @@ function Block:update(dt)
     self.dtotal = 0
     return dtotal
   end
+  if self:collision() then 
+    self:setBlock()
+  end
+  if self.reset then
+    self.reset = false
+    block = table.remove(upcoming, 1)
+    block.x = 5
+    block.y = 1
+  end
 end 
 
 ---------------------------------------------------------------
@@ -131,8 +147,6 @@ end
 function Block:getX(i)
   return self.x + self.dx[i]
 end
-
----------------------------------------------------------------
 
 function Block:getY(i)
   return self.y + self.dy[i]
@@ -163,10 +177,16 @@ end
 function Block:setBlock()
   for i = 1, 4 do
     local y, x = self:getY(i), self:getX(i)
-    if not map:isFilled(x, y) then
-      map[y][x] = self.color
+    if y > 0 then
+      if not map:isFilled(x, y) then
+        map[y][x] = self.color
+      end
+    end
+    if y < 0 then
+      gameOver = true
     end
   end 
+  
 end
 
 ---------------------------------------------------------------
@@ -186,12 +206,7 @@ end
 
 function Block:draw()
   local size = map.size
-  if self:collision() then 
-    self:setBlock()
-  end
-  if self.reset then
-    self:formation()
-  end
+  
   love.graphics.setColor(unpack(colors[self.color]))
   for i = 1, 4 do
     love.graphics.rectangle("fill", self:getX(i)*size+200, self:getY(i)*size-30, size, size)
@@ -200,7 +215,6 @@ end
   
 ---------------------------------------------------------------
 function Block:formation()
-  self.color = math.random(1,7)
   if self.color == 1 then
     self.dx = {0,-1,0,1}
     self.dy = {0,0,-1,-1}
@@ -229,29 +243,53 @@ function Block:formation()
     self.dx = {0,0,0,0}
     self.dy = {0,-1,-2,-3}
   end
-  self.x = 5
-  self.y = 0
+  
   self.reset = false
 end
 
-local block = Block.new()
+--=============================================================================
+
+function upcoming:update()
+  while #self < 3 do
+    Block.new()
+  end
+  for i = 1, 3 do 
+    self[i].x = -2
+    self[i].y = i*5
+  end
+end
 
 ---------------------------------------------------------------
 
---=============================================================================
+function upcoming:draw()
+  for i = 1, #self do
+    self[i]:draw()
+  end
+end
+
 --=============================================================================
 love.graphics.setBackgroundColor(0.6, 0.6, 0.6)
 love.audio.play(tetris)
 function love.draw()
-  map:draw()
-  block:draw()
-  score:draw()
+  if gameOver ~= true then
+    map:draw()
+    block:draw()
+    score:draw()
+    upcoming:draw()
+  end
+  if gameOver == true then
+    love.graphics.print('Game Over', 300, 250, 0, 2,2)
+    score:draw()
+  end
 end
 
 ---------------------------------------------------------------
 function love.update(dt)
-  block:update(dt)
-  map:dropLine()
+  if gameOver ~= true then
+    block:update(dt)
+    map:dropLine()
+    upcoming:update()
+  end
 end
 
 ---------------------------------------------------------------
@@ -296,4 +334,8 @@ end
 function love.load(arg)
   math.randomseed(os.time())
   if arg[#arg] == "-debug" then require("mobdebug").start() end
+  for i = 1, 4 do
+    Block.new()
+  end
+  block = table.remove(upcoming, 1)
 end
