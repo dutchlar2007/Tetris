@@ -337,6 +337,7 @@ function love.keypressed(key)
     while not block:collision() do
      block.y = block.y+1
     end
+    block.dtotal = score.speed
   end
   if key == 'up' then
     block:counterClock()
