@@ -334,9 +334,9 @@ function love.keypressed(key)
     ::skip2::
   end
   if key == 'space' then
-    repeat
+    while not block:collision() do
      block.y = block.y+1
-    until block:collision()
+    end
   end
   if key == 'up' then
     block:counterClock()
