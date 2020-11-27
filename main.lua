@@ -193,7 +193,7 @@ end
 function Block:setBlock()
   for i = 1, 4 do
     local y, x = self:getY(i), self:getX(i)
-    if y > 0 then
+    if 0 < y and y <= #map then
       if not map:isFilled(x, y) then
         map[y][x] = self.color
       end
