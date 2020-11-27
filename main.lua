@@ -4,7 +4,6 @@ end
 tetris = love.audio.newSource('tetris.mp3', 'stream')
 tetris:setLooping( true )
 
-local dtotal = 0
 local upcoming = {}
 local score, updatable, drawable, block, drawGameOver
 
@@ -156,23 +155,23 @@ end
 ---------------------------------------------------------------
 function Block:update(dt)
   
-  self.dtotal = self.dtotal + dt
+  Block.dtotal = Block.dtotal + dt
   local timeLimit = score.speed
   if score.fastSpeed and score.fastSpeed <= score.speed then
     timeLimit = score.fastSpeed
   end
   
-  if self.dtotal >= timeLimit then
+  if Block.dtotal >= timeLimit then
     if self:collision() then 
       self:setBlock()
       self:remove()
       upcoming:getNextBlock()
-      self.dtotal = 0
+      Block.dtotal = score.speed
       return
     end
   
     self.y = math.min(20, self.y + 1)
-    self.dtotal = 0
+    Block.dtotal = 0
   end
 end 
 
@@ -196,6 +195,44 @@ end
 
 function Block:down()
   self.y = self.y + 1
+end
+
+---------------------------------------------------------------
+function Block:onLeft()
+  for i = 1, 4 do
+    local y, x = self:getY(i), self:getX(i) - 1
+    if self:getX(i) <= 1 or map:isFilled(x,y) then
+      return
+    end
+  end
+  self:left()
+end
+
+---------------------------------------------------------------
+function Block:onRight()
+  for i = 1, 4 do
+    local y, x = self:getY(i), self:getX(i) + 1
+    if self:getX(i) >= 10 or map:isFilled(x,y) then
+      return
+    end
+  end
+  block:right()
+end
+
+---------------------------------------------------------------
+function Block:onDrop()
+  while not self:collision() do
+   self:down()
+  end
+  Block.dtotal = score.speed
+end
+
+---------------------------------------------------------------
+function Block:checkBounds()
+  xmin = math.min(unpack(self.dx)) + self.x - 1
+  xmax = math.max(unpack(self.dx)) + self.x - 10
+  if xmin < 0 then self.x = self.x - xmin end 
+  if xmax > 0 then self.x = self.x - xmax end
 end
 
 ---------------------------------------------------------------
@@ -355,30 +392,13 @@ end
 ---------------------------------------------------------------
 function love.keypressed(key)
   if key == 'left' then
-    for i = 1, 4 do
-      local y, x = block:getY(i), block:getX(i) - 1
-      if block:getX(i) <= 1 or map:isFilled(x,y) then
-        goto skip1
-      end
-    end
-    block:left()
-    ::skip1::
+    block:onLeft()
   end
   if key == 'right' then
-    for i = 1, 4 do
-      local y, x = block:getY(i), block:getX(i) + 1
-      if block:getX(i) >= 10 or map:isFilled(x,y) then
-        goto skip2
-      end
-    end
-    block:right()
-    ::skip2::
+    block:onRight()
   end
   if key == 'space' then
-    while not block:collision() do
-     block:down()
-    end
-    block.dtotal = score.speed
+    block:onDrop()
   end
   if key == 'up' then
     block:counterClock()
@@ -389,10 +409,7 @@ function love.keypressed(key)
   if key == 'lshift' then
     score.fastSpeed = .07
   end
-  xmin = math.min(unpack(block.dx)) + block.x - 1
-  xmax = math.max(unpack(block.dx)) + block.x - 10
-  if xmin < 0 then block.x = block.x - xmin end 
-  if xmax > 0 then block.x = block.x - xmax end
+  block:checkBounds()
 end
 
 ---------------------------------------------------------------
