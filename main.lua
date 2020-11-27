@@ -8,6 +8,8 @@ local upcoming = {}
 local score, updatable, drawable, block, drawGameOver
 
 --=============================================================================
+-- List Metatable 
+--=============================================================================
 local List = {}
 List.__index = List
 
@@ -38,6 +40,8 @@ function List:append(...)
 end  
 
 --=============================================================================
+-- Block and background colors
+--=============================================================================
 
 local colors = {                        -- The format for items is {R,G,B, 'Color'}
   {255,0,0,1},     -- Red 
@@ -45,17 +49,18 @@ local colors = {                        -- The format for items is {R,G,B, 'Colo
   {0,0,255,1},     -- Blue
   {255,255,0,1},   -- Yellow
   {255,0,255,1},   -- Purple
-  {1,.5,0,1},   -- Orange
+  {1,.5,0,1},      -- Orange
   {0,255,255,1},   -- Aqua 
 }
-colors[0] = {0,0,0, 1} -- Black
+colors[0] = {0,0,0,1} -- Black
+colors.background = {0.6, 0.6, 0.6}
 
 --=============================================================================
 
 function rectBorder(block_color, ...)
   love.graphics.setColor(unpack(block_color))
   love.graphics.rectangle("fill", ...)
-  love.graphics.setColor(0.6, 0.6, 0.6)
+  love.graphics.setColor(unpack(colors.background))
   love.graphics.rectangle("line", ...)
 end
 
@@ -310,7 +315,6 @@ end
 function Block:draw()
   local size = map.size
   
-  --love.graphics.setColor(unpack(colors[self.color]))
   for i = 1, 4 do
     rectBorder(colors[self.color], self:getX(i)*size+200, self:getY(i)*size-30, size, size)
   end
@@ -373,7 +377,7 @@ function upcoming:draw()
 end
 
 --=============================================================================
-love.graphics.setBackgroundColor(0.6, 0.6, 0.6)
+love.graphics.setBackgroundColor(unpack(colors.background))
 love.audio.play(tetris)
 
 drawable = setmetatable({}, List)
