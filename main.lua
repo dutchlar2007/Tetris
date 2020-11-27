@@ -24,6 +24,15 @@ colors[0] = {0,0,0, 1} -- Black
 
 --=============================================================================
 
+function rectBorder(block_color, ...)
+  love.graphics.setColor(unpack(block_color))
+  love.graphics.rectangle("fill", ...)
+  love.graphics.setColor(0.6, 0.6, 0.6)
+  love.graphics.rectangle("line", ...)
+end
+
+--=============================================================================
+
 local map = {
   {0,0,0,0,0,0,0,0,0,0},
   {0,0,0,0,0,0,0,0,0,0},
@@ -92,8 +101,7 @@ end
 function map:draw()
   for Y = 1 , #self do 
     for X = 1, #self[Y] do
-      love.graphics.setColor(unpack(colors[self[Y][X]]))
-      love.graphics.rectangle("fill", X*self.size+200, Y*self.size-30, self.size, self.size)
+      rectBorder(colors[self[Y][X]], X*self.size+200, Y*self.size-30, self.size, self.size)
     end  
   end  
 end
@@ -215,9 +223,9 @@ end
 function Block:draw()
   local size = map.size
   
-  love.graphics.setColor(unpack(colors[self.color]))
+  --love.graphics.setColor(unpack(colors[self.color]))
   for i = 1, 4 do
-    love.graphics.rectangle("fill", self:getX(i)*size+200, self:getY(i)*size-30, size, size)
+    rectBorder(colors[self.color], self:getX(i)*size+200, self:getY(i)*size-30, size, size)
   end
 end
   
