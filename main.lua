@@ -1,8 +1,15 @@
+--=============================================================================
+-- TETRIS
+--
+-- The awesome game of falling blocks
+--
+-- Author       - Dutch Larsen
+-- Contributors - Christian Larsen, Lance Larsen
+--=============================================================================
+
 if unpack == nil then
   unpack = table.unpack
 end
-tetris = love.audio.newSource('tetris.mp3', 'stream')
-tetris:setLooping( true )
 
 local upcoming = {}
 local score, updatable, drawable, block, drawGameOver
@@ -138,9 +145,21 @@ function map:draw()
 end
 
 --=============================================================================
+-- Scoring object
+--
+-- points    - The number of points that have been earned.
+-- speed     - The time step before block moves.
+-- fastSpeed - Speed when spped drop button is selected
+-- numLines  - The number of lines that have been eliminated
+--=============================================================================
 score = {points = 0, speed = 1, fastSpeed = nil, numLines = 0}
 
 ---------------------------------------------------------------
+-- Event to notify the score object of number of lines that were
+-- dropped as a new block was added.
+--
+-- @param dropped The number of lines that were dropped.
+--
 function score:Lines(dropped)
   local scores = {100, 300, 600, 1000}
   self.points = self.points + scores[dropped]
@@ -149,26 +168,39 @@ function score:Lines(dropped)
 end
 
 ---------------------------------------------------------------
+-- Draw the score
+--
 function score:draw()
   love.graphics.setColor(unpack(colors[block.color]))
   love.graphics.print(string.format('Score: %d', self.points), 600, 150, 0, 2,2)
 end
 
 --=============================================================================
+-- Block Metatable
+--
+-- dtotal - The time that has passed since the last block movement
+--=============================================================================
 local Block = {dtotal = 0}
 
 Block.__index = Block
 
 ---------------------------------------------------------------
+-- Create a new block and return it
+--
 function Block.new()
-  local block = {x = 5, y = 1, dx  = {}, dy = {}, color = math.random(1,7)}
+  local block = {x = 5, y = 0, dx  = {}, dy = {}, color = math.random(1,7)}
   setmetatable(block, Block)
   block:formation()
-  table.insert(upcoming, block)
   return block
 end
 
 ---------------------------------------------------------------
+-- Update the block position. This is only used for the block
+-- that is falling. Blocks in the upcoming list are handled
+-- by the upcoming update function.
+--
+-- @param dt The change in time since the last update
+--
 function Block:update(dt)
   
   Block.dtotal = Block.dtotal + dt
@@ -214,6 +246,19 @@ function Block:down()
 end
 
 ---------------------------------------------------------------
+function Block:clockwise()
+  for i = 2, 4 do
+    self.dx[i], self.dy[i] = -self.dy[i], self.dx[i]
+  end
+end
+
+function  Block:counterClock()
+  for i = 2, 4 do
+    self.dx[i], self.dy[i] = self.dy[i], -self.dx[i]
+  end  
+end
+
+---------------------------------------------------------------
 function Block:onLeft()
   for i = 1, 4 do
     local y, x = self:getY(i), self:getX(i) - 1
@@ -244,6 +289,22 @@ function Block:onDrop()
 end
 
 ---------------------------------------------------------------
+function Block:onClockwise()
+  self:clockwise()
+  if self:collision() then
+    self:counterClock()
+  end
+end
+
+---------------------------------------------------------------
+function Block:onCounterClock()
+  self:counterClock()
+  if self:collision() then
+    self:clockwise()
+  end
+end
+
+---------------------------------------------------------------
 function Block:checkBounds()
   xmin = math.min(unpack(self.dx)) + self.x - 1
   xmax = math.max(unpack(self.dx)) + self.x - 10
@@ -258,8 +319,8 @@ function Block:collision()
       return true
     end
     for i = 1, 4 do
-      local y, x = self:getY(i) + 1, self:getX(i)
-      if map:isFilled(x,y) then
+      local y, x = self:getY(i), self:getX(i)
+      if map:isFilled(x,y+1) or map:isFilled(x,y) then
         return true
       end
     end
@@ -296,19 +357,6 @@ function Block:init()
   self.x = 5
   updatable:append(self)
   drawable:append(self)
-end
-
----------------------------------------------------------------
-function Block:clockwise()
-  for i = 2,4 do
-    self.dx[i], self.dy[i] = -self.dy[i], self.dx[i]
-  end
-end
-
-function  Block:counterClock()
-  for i = 2,4 do
-    self.dx[i], self.dy[i] = self.dy[i], -self.dx[i]
-  end  
 end
 
 ---------------------------------------------------------------
@@ -355,7 +403,7 @@ end
 --=============================================================================
 function upcoming:update()
   while #self < 3 do
-    Block.new()
+    table.insert(self, Block.new())
   end
   for i = 1, 3 do 
     self[i].x = -2
@@ -377,9 +425,6 @@ function upcoming:draw()
 end
 
 --=============================================================================
-love.graphics.setBackgroundColor(unpack(colors.background))
-love.audio.play(tetris)
-
 drawable = setmetatable({}, List)
 
 function love.draw()
@@ -416,10 +461,10 @@ function love.keypressed(key)
     block:onDrop()
   end
   if key == 'up' then
-    block:counterClock()
+    block:onCounterClock()
   end
   if key == 'down' then
-    block:clockwise()
+    block:onClockwise()
   end
   if key == 'lshift' then
     score.fastSpeed = .07
@@ -436,14 +481,26 @@ end
 
 ---------------------------------------------------------------
 function love.load(arg)
+  -- Initialize random numbers
   math.randomseed(os.time())
-  if arg[#arg] == "-debug" then require("mobdebug").start() end
-  for i = 1, 4 do
-    Block.new()
-  end
-  map:lineDropListener(score)
-  block = table.remove(upcoming, 1)
   
+  -- Enable debugging when debug option is set
+  if arg[#arg] == "-debug" then require("mobdebug").start() end
+  
+  love.graphics.setBackgroundColor(unpack(colors.background))
+  tetris = love.audio.newSource('tetris.mp3', 'stream')
+  tetris:setLooping( true )
+  love.audio.play(tetris)
+
+  map:lineDropListener(score)
+
+  -- Add the initial blocks to upcoming
+  for i = 1, 3 do
+    table.insert(upcoming, Block.new())
+  end
+  
+  -- Get an active block
+  block = Block.new()
   updatable:append(map, upcoming, block)
   drawable:append(map, score, upcoming, block)
 end
