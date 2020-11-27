@@ -12,7 +12,7 @@ if unpack == nil then
 end
 
 local upcoming = {}
-local score, updatable, drawable, block, drawGameOver
+local score, updatable, drawable, block
 
 --=============================================================================
 -- List Metatable 
@@ -339,8 +339,7 @@ function Block:setBlock()
       end
     end
     if y < 0 then
-      love.draw = drawGameOver
-      love.update = nil
+      love.event.push("gameOver")
     end
   end
 end
@@ -479,8 +478,21 @@ function love.keyreleased(key)
   end
 end
 
----------------------------------------------------------------
+--=============================================================================
+-- Register the Game Over Event
+--=============================================================================
+
+function gameOver()
+  love.draw = drawGameOver
+  love.update = nil
+end
+
+love.handlers.gameOver = gameOver
+
+--=============================================================================
+
 function love.load(arg)
+  
   -- Initialize random numbers
   math.randomseed(os.time())
   
