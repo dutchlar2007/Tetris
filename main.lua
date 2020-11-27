@@ -141,19 +141,21 @@ end
 
 ---------------------------------------------------------------
 
-function Block:update(dt)  
-  if self:collision() then 
-    self:setBlock()
-    self.dtotal = 0
-    return
-  end
+function Block:update(dt)
   
   self.dtotal = self.dtotal + dt
   local timeLimit = score.speed
   if score.fastSpeed and score.fastSpeed <= score.speed then
     timeLimit = score.fastSpeed
   end
+  
   if self.dtotal >= timeLimit then
+    if self:collision() then 
+      self:setBlock()
+      self.dtotal = 0
+      return
+    end
+  
     self.y = math.min(20, self.y + 1)
     self.dtotal = 0
     return dtotal
