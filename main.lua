@@ -15,10 +15,20 @@ local colors = {                        -- The format for items is {R,G,B, 'Colo
   {0,0,255,1},     -- Blue
   {255,255,0,1},   -- Yellow
   {255,0,255,1},   -- Purple
-  {1,.5,0,1},   -- Orange
+  {1,.5,0,1},      -- Orange
   {0,255,255,1},   -- Aqua 
 }
 colors[0] = {0,0,0, 1} -- Black
+colors.border = {0.6, 0.6, 0.6, 1}
+
+--=============================================================================
+
+local function rectBorder(block_color, ...)
+  love.graphics.setColor(unpack(block_color))
+  love.graphics.rectangle("fill", unpack({...}))
+  love.graphics.setColor(unpack(colors.border))
+  love.graphics.rectangle("line", unpack({...}))
+end
 
 --=============================================================================
 
@@ -64,15 +74,15 @@ function map:isLineFilled(y)
 end
 
 ---------------------------------------------------------------
-function map:dropLine()
+function map:update()
   local dropped = 0
-  for y = 1, 20 do
-    if map:isLineFilled(y) then
+  for y = 1, #self do
+    if self:isLineFilled(y) then
       dropped = dropped + 1
       for i = y, 2, -1 do 
-        map[i] = map[i - 1]
+        self[i] = self[i - 1]
       end 
-      map[1] = {0,0,0,0,0,0,0,0,0,0}
+      self[1] = {0,0,0,0,0,0,0,0,0,0}
     end
   end
   if dropped > 0 then 
@@ -84,8 +94,7 @@ end
 function map:draw()
   for Y = 1 , #self do 
     for X = 1, #self[Y] do
-      love.graphics.setColor(unpack(colors[self[Y][X]]))
-      love.graphics.rectangle("fill", X*self.size+200, Y*self.size-30, self.size, self.size)
+      rectBorder(colors[self[Y][X]], X*self.size+200, Y*self.size-30, self.size, self.size)
     end  
   end  
 end
@@ -99,11 +108,12 @@ function score:Lines(dropped)
   local scores = {100, 300, 600, 1000}
   self.points = self.points + scores[dropped]
   self.numLines = self.numLines + dropped
-  self.speed = 0.8^(self.numLines/5)
+  self.speed = 0.8^(self.numLines/7)
 end
 
 ---------------------------------------------------------------
 function score:draw()
+  love.graphics.setColor(unpack(colors[block.color]))
   love.graphics.print(string.format('Score: %d', self.points), 600, 150, 0, 2,2)
 end
 
@@ -129,11 +139,13 @@ function Block:update(dt)
   if self.dtotal >= score.speed then
     self.y = math.min(20, self.y + 1)
     self.dtotal = 0
+    if self:collision() then 
+      self:setBlock()
+    end
     return dtotal
   end
-  if self:collision() then 
-    self:setBlock()
-  end
+  
+  
   if self.reset then
     self.reset = false
     block = table.remove(upcoming, 1)
@@ -157,13 +169,11 @@ end
 function Block:collision()
   for i = 1, 4 do
     if self:getY(i) >= 20 then 
-      self.reset = true
       return true
     end
     for i = 1, 4 do
       local y, x = self:getY(i) + 1, self:getX(i)
-      if map:isFilled(x,y) then
-        self.reset = true 
+      if map:isFilled(x,y) then 
         return true
       end
     end
@@ -180,6 +190,7 @@ function Block:setBlock()
     if y > 0 then
       if not map:isFilled(x, y) then
         map[y][x] = self.color
+        self.reset = true
       end
     end
     if y < 0 then
@@ -206,10 +217,8 @@ end
 
 function Block:draw()
   local size = map.size
-  
-  love.graphics.setColor(unpack(colors[self.color]))
   for i = 1, 4 do
-    love.graphics.rectangle("fill", self:getX(i)*size+200, self:getY(i)*size-30, size, size)
+    rectBorder(colors[self.color], self:getX(i)*size+200, self:getY(i)*size-30, size, size)
   end
 end
   
@@ -268,7 +277,7 @@ function upcoming:draw()
 end
 
 --=============================================================================
-love.graphics.setBackgroundColor(0.6, 0.6, 0.6)
+love.graphics.setBackgroundColor(unpack(colors.border))
 love.audio.play(tetris)
 function love.draw()
   if gameOver ~= true then
@@ -287,7 +296,7 @@ end
 function love.update(dt)
   if gameOver ~= true then
     block:update(dt)
-    map:dropLine()
+    map:update()
     upcoming:update()
   end
 end
@@ -316,8 +325,10 @@ function love.keypressed(key)
   end
   if key == 'space' then
     repeat
-     block.y = block.y+1
+      block.y = block.y+1
+      block.y = math.min(20, block.y + 1)
     until block:collision()
+    block:setBlock()
   end
   if key == 'up' then
     block:counterClock()
