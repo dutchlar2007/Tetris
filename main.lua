@@ -353,12 +353,14 @@ function love.keypressed(key)
   if xmax > 0 then block.x = block.x - xmax end
 end
 
+---------------------------------------------------------------
 function love.keyreleased(key)
   if key == 'lshift' then
     score.fastSpeed = nil
   end
 end
 
+---------------------------------------------------------------
 function love.load(arg)
   math.randomseed(os.time())
   if arg[#arg] == "-debug" then require("mobdebug").start() end
