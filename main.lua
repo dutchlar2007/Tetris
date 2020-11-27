@@ -1,13 +1,31 @@
-local dtotal = 0
 if unpack == nil then
   unpack = table.unpack
 end
 tetris = love.audio.newSource('tetris.mp3', 'stream')
-local score
-local upcoming = {}
-local block
-local gameOver = false
 tetris:setLooping( true )
+
+local dtotal = 0
+local upcoming = {}
+local score, updatable, drawable, block, drawGameOver
+
+--=============================================================================
+local List = {}
+List.__index = List
+
+---------------------------------------------------------------
+function List:remove(item)
+  for i = 1, #self do
+    if self[i] == item then
+      table.remove(self, i)
+      return
+    end
+  end
+end
+
+---------------------------------------------------------------
+function List:append(item)
+  table.insert(self, item)
+end  
 
 --=============================================================================
 
@@ -70,9 +88,7 @@ function map:isFilled(x,y)
   return map[y] and map[y][x] and map[y][x] ~= 0
 end
 
-
 ---------------------------------------------------------------
-
 function map:isLineFilled(y)
   for x = 1, #map[y] do
     if not map:isFilled(x,y) then return false end
@@ -110,7 +126,6 @@ end
 score = {points = 0, speed = 1, fastSpeed = nil, numLines = 0}
 
 ---------------------------------------------------------------
-
 function score:Lines(dropped)
   local scores = {100, 300, 600, 1000}
   self.points = self.points + scores[dropped]
@@ -130,7 +145,6 @@ local Block = {dtotal = 0}
 Block.__index = Block
 
 ---------------------------------------------------------------
-
 function Block.new()
   local block = {x = 5, y = 1, dx  = {}, dy = {}, color = math.random(1,7)}
   setmetatable(block, Block)
@@ -140,7 +154,6 @@ function Block.new()
 end
 
 ---------------------------------------------------------------
-
 function Block:update(dt)
   
   self.dtotal = self.dtotal + dt
@@ -152,18 +165,18 @@ function Block:update(dt)
   if self.dtotal >= timeLimit then
     if self:collision() then 
       self:setBlock()
+      self:remove()
+      upcoming:getNextBlock()
       self.dtotal = 0
       return
     end
   
     self.y = math.min(20, self.y + 1)
     self.dtotal = 0
-    return dtotal
   end
 end 
 
 ---------------------------------------------------------------
-
 function Block:getX(i)
   return self.x + self.dx[i]
 end
@@ -173,7 +186,19 @@ function Block:getY(i)
 end
 
 ---------------------------------------------------------------
+function Block:left()
+  self.x = self.x - 1
+end
 
+function Block:right()
+  self.x = self.x + 1
+end
+
+function Block:down()
+  self.y = self.y + 1
+end
+
+---------------------------------------------------------------
 function Block:collision()
   for i = 1, 4 do
     if self:getY(i) >= 20 then
@@ -191,7 +216,6 @@ function Block:collision()
 end
 
 ---------------------------------------------------------------
-
 function Block:setBlock()
   for i = 1, 4 do
     local y, x = self:getY(i), self:getX(i)
@@ -201,17 +225,27 @@ function Block:setBlock()
       end
     end
     if y < 0 then
-      gameOver = true
+      love.draw = drawGameOver
+      love.update = nil
     end
   end
-  
-  block = table.remove(upcoming, 1)
-  block.x = 5
-  block.y = 1
 end
 
 ---------------------------------------------------------------
+function Block:remove()
+  updatable:remove(self)
+  drawable:remove(self)  
+end
 
+---------------------------------------------------------------
+function Block:init()
+  self.y = 0
+  self.x = 5
+  updatable:append(self)
+  drawable:append(self)
+end
+
+---------------------------------------------------------------
 function Block:clockwise()
   for i = 2,4 do
     self.dx[i], self.dy[i] = -self.dy[i], self.dx[i]
@@ -223,8 +257,8 @@ function  Block:counterClock()
     self.dx[i], self.dy[i] = self.dy[i], -self.dx[i]
   end  
 end
----------------------------------------------------------------
 
+---------------------------------------------------------------
 function Block:draw()
   local size = map.size
   
@@ -267,7 +301,6 @@ function Block:formation()
 end
 
 --=============================================================================
-
 function upcoming:update()
   while #self < 3 do
     Block.new()
@@ -279,7 +312,12 @@ function upcoming:update()
 end
 
 ---------------------------------------------------------------
+function upcoming:getNextBlock()
+  block = table.remove(self, 1)
+  block:init()
+end
 
+---------------------------------------------------------------
 function upcoming:draw()
   for i = 1, #self do
     self[i]:draw()
@@ -289,26 +327,29 @@ end
 --=============================================================================
 love.graphics.setBackgroundColor(0.6, 0.6, 0.6)
 love.audio.play(tetris)
+
+drawable = setmetatable({map, score, upcoming, block}, List)
+
 function love.draw()
-  if gameOver ~= true then
-    map:draw()
-    block:draw()
-    score:draw()
-    upcoming:draw()
-  end
-  if gameOver == true then
-    love.graphics.print('Game Over', 300, 250, 0, 2,2)
-    score:draw()
+  for i = 1, #drawable do
+    drawable[i]:draw()
   end
 end
 
 ---------------------------------------------------------------
+function drawGameOver()
+  love.graphics.print('Game Over', 300, 250, 0, 2,2)
+  score:draw()
+end  
+
+--=============================================================================
+updatable = setmetatable({map, upcoming, block}, List)
+
+---------------------------------------------------------------
 function love.update(dt)
-  if gameOver then return end
-  
-  block:update(dt)
-  map:update()
-  upcoming:update()
+  for i = 1, #updatable do
+    updatable[i]:update(dt)
+  end
 end
 
 ---------------------------------------------------------------
@@ -320,7 +361,7 @@ function love.keypressed(key)
         goto skip1
       end
     end
-    block.x = block.x - 1
+    block:left()
     ::skip1::
   end
   if key == 'right' then
@@ -330,12 +371,12 @@ function love.keypressed(key)
         goto skip2
       end
     end
-    block.x = block.x + 1
+    block:right()
     ::skip2::
   end
   if key == 'space' then
     while not block:collision() do
-     block.y = block.y+1
+     block:down()
     end
     block.dtotal = score.speed
   end
@@ -370,4 +411,6 @@ function love.load(arg)
   end
   map:lineDropListener(score)
   block = table.remove(upcoming, 1)
+  updatable:append(block)
+  drawable:append(block)
 end
