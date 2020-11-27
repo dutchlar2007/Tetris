@@ -12,6 +12,10 @@ local List = {}
 List.__index = List
 
 ---------------------------------------------------------------
+-- Remove item from the list.
+--
+-- @param item The item to remove from the list.
+--
 function List:remove(item)
   for i = 1, #self do
     if self[i] == item then
@@ -22,8 +26,15 @@ function List:remove(item)
 end
 
 ---------------------------------------------------------------
-function List:append(item)
-  table.insert(self, item)
+-- Add items to the list.
+-- 
+-- @param ... Items to append to the list.
+--
+function List:append(...)
+  local items = {...}
+  for i = 1, #items do
+    table.insert(self, items[i])
+  end
 end  
 
 --=============================================================================
@@ -365,7 +376,7 @@ end
 love.graphics.setBackgroundColor(0.6, 0.6, 0.6)
 love.audio.play(tetris)
 
-drawable = setmetatable({map, score, upcoming, block}, List)
+drawable = setmetatable({}, List)
 
 function love.draw()
   for i = 1, #drawable do
@@ -380,7 +391,7 @@ function drawGameOver()
 end  
 
 --=============================================================================
-updatable = setmetatable({map, upcoming, block}, List)
+updatable = setmetatable({}, List)
 
 ---------------------------------------------------------------
 function love.update(dt)
@@ -428,6 +439,7 @@ function love.load(arg)
   end
   map:lineDropListener(score)
   block = table.remove(upcoming, 1)
-  updatable:append(block)
-  drawable:append(block)
+  
+  updatable:append(map, upcoming, block)
+  drawable:append(map, score, upcoming, block)
 end
