@@ -342,7 +342,7 @@ function love.keypressed(key)
   if key == 'down' then
     block:clockwise()
   end
-  if key == 'w' then
+  if key == 'lshift' then
     score.fastSpeed = .07
   end
   xmin = math.min(unpack(block.dx)) + block.x - 1
@@ -352,7 +352,7 @@ function love.keypressed(key)
 end
 
 function love.keyreleased(key)
-  if key == 'w' then
+  if key == 'lshift' then
     score.fastSpeed = nil
   end
 end
