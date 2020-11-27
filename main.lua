@@ -81,7 +81,7 @@ function map:isLineFilled(y)
 end
 
 ---------------------------------------------------------------
-function map:dropLine()
+function map:update()
   local dropped = 0
   for y = 1, 20 do
     if map:isLineFilled(y) then
@@ -107,7 +107,7 @@ function map:draw()
 end
 
 --=============================================================================
-score = {points = 0, speed = 1, numLines = 0}
+score = {points = 0, speed = 1, fastSpeed = nil, numLines = 0}
 
 ---------------------------------------------------------------
 
@@ -120,11 +120,12 @@ end
 
 ---------------------------------------------------------------
 function score:draw()
+  love.graphics.setColor(unpack(colors[block.color]))
   love.graphics.print(string.format('Score: %d', self.points), 600, 150, 0, 2,2)
 end
 
 --=============================================================================
-local Block = {dtotal = 0, reset = 1}
+local Block = {dtotal = 0}
 
 Block.__index = Block
 
@@ -140,21 +141,22 @@ end
 
 ---------------------------------------------------------------
 
-function Block:update(dt)
+function Block:update(dt)  
+  if self:collision() then 
+    self:setBlock()
+    self.dtotal = 0
+    return
+  end
+  
   self.dtotal = self.dtotal + dt
-  if self.dtotal >= score.speed then
+  local timeLimit = score.speed
+  if score.fastSpeed and score.fastSpeed <= score.speed then
+    timeLimit = score.fastSpeed
+  end
+  if self.dtotal >= timeLimit then
     self.y = math.min(20, self.y + 1)
     self.dtotal = 0
     return dtotal
-  end
-  if self:collision() then 
-    self:setBlock()
-  end
-  if self.reset then
-    self.reset = false
-    block = table.remove(upcoming, 1)
-    block.x = 5
-    block.y = 1
   end
 end 
 
@@ -172,14 +174,12 @@ end
 
 function Block:collision()
   for i = 1, 4 do
-    if self:getY(i) >= 20 then 
-      self.reset = true
+    if self:getY(i) >= 20 then
       return true
     end
     for i = 1, 4 do
       local y, x = self:getY(i) + 1, self:getX(i)
       if map:isFilled(x,y) then
-        self.reset = true 
         return true
       end
     end
@@ -201,8 +201,11 @@ function Block:setBlock()
     if y < 0 then
       gameOver = true
     end
-  end 
+  end
   
+  block = table.remove(upcoming, 1)
+  block.x = 5
+  block.y = 1
 end
 
 ---------------------------------------------------------------
@@ -259,8 +262,6 @@ function Block:formation()
     self.dx = {0,0,0,0}
     self.dy = {0,-1,-2,-3}
   end
-  
-  self.reset = false
 end
 
 --=============================================================================
@@ -301,11 +302,11 @@ end
 
 ---------------------------------------------------------------
 function love.update(dt)
-  if gameOver ~= true then
-    block:update(dt)
-    map:dropLine()
-    upcoming:update()
-  end
+  if gameOver then return end
+  
+  block:update(dt)
+  map:update()
+  upcoming:update()
 end
 
 ---------------------------------------------------------------
@@ -341,10 +342,19 @@ function love.keypressed(key)
   if key == 'down' then
     block:clockwise()
   end
+  if key == 'w' then
+    score.fastSpeed = .07
+  end
   xmin = math.min(unpack(block.dx)) + block.x - 1
   xmax = math.max(unpack(block.dx)) + block.x - 10
   if xmin < 0 then block.x = block.x - xmin end 
   if xmax > 0 then block.x = block.x - xmax end
+end
+
+function love.keyreleased(key)
+  if key == 'w' then
+    score.fastSpeed = nil
+  end
 end
 
 function love.load(arg)
