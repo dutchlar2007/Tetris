@@ -11,7 +11,7 @@ if unpack == nil then
   unpack = table.unpack
 end
 
-local upcoming = {}
+local BlockManager = {}
 local score, updatable, drawable, block
 
 --=============================================================================
@@ -171,7 +171,7 @@ end
 -- Draw the score
 --
 function score:draw()
-  love.graphics.setColor(unpack(colors[block.color]))
+  love.graphics.setColor(unpack(colors[BlockManager.active.color]))
   love.graphics.print(string.format('Score: %d', self.points), 600, 150, 0, 2,2)
 end
 
@@ -196,8 +196,8 @@ end
 
 ---------------------------------------------------------------
 -- Update the block position. This is only used for the block
--- that is falling. Blocks in the upcoming list are handled
--- by the upcoming update function.
+-- that is falling. Blocks in the BlockManager list are handled
+-- by the BlockManager update function.
 --
 -- @param dt The change in time since the last update
 --
@@ -213,7 +213,7 @@ function Block:update(dt)
     if self:collision() then 
       self:setBlock()
       self:remove()
-      upcoming:getNextBlock()
+      BlockManager:getNextBlock()
       Block.dtotal = score.speed
       return
     end
@@ -277,7 +277,7 @@ function Block:onRight()
       return
     end
   end
-  block:right()
+  self:right()
 end
 
 ---------------------------------------------------------------
@@ -400,7 +400,7 @@ function Block:formation()
 end
 
 --=============================================================================
-function upcoming:update()
+function BlockManager:update(dt)
   while #self < 3 do
     table.insert(self, Block.new())
   end
@@ -408,19 +408,22 @@ function upcoming:update()
     self[i].x = -2
     self[i].y = i*5
   end
+  self.active:update(dt)
 end
 
 ---------------------------------------------------------------
-function upcoming:getNextBlock()
-  block = table.remove(self, 1)
-  block:init()
+function BlockManager:getNextBlock()
+  self.active = table.remove(self, 1)
+  if not self.active then self.active = Block.new() end
+  self.active:init()
 end
 
 ---------------------------------------------------------------
-function upcoming:draw()
+function BlockManager:draw()
   for i = 1, #self do
     self[i]:draw()
   end
+  self.active:draw()
 end
 
 --=============================================================================
@@ -451,24 +454,24 @@ end
 ---------------------------------------------------------------
 function love.keypressed(key)
   if key == 'left' then
-    block:onLeft()
+    BlockManager.active:onLeft()
   end
   if key == 'right' then
-    block:onRight()
+    BlockManager.active:onRight()
   end
   if key == 'space' then
-    block:onDrop()
+    BlockManager.active:onDrop()
   end
   if key == 'up' then
-    block:onCounterClock()
+    BlockManager.active:onCounterClock()
   end
   if key == 'down' then
-    block:onClockwise()
+    BlockManager.active:onClockwise()
   end
   if key == 'lshift' then
     score.fastSpeed = .07
   end
-  block:checkBounds()
+  BlockManager.active:checkBounds()
 end
 
 ---------------------------------------------------------------
@@ -506,13 +509,8 @@ function love.load(arg)
 
   map:lineDropListener(score)
 
-  -- Add the initial blocks to upcoming
-  for i = 1, 3 do
-    table.insert(upcoming, Block.new())
-  end
-  
   -- Get an active block
-  block = Block.new()
-  updatable:append(map, upcoming, block)
-  drawable:append(map, score, upcoming, block)
+  BlockManager:getNextBlock()
+  updatable:append(map, BlockManager)
+  drawable:append(map, score, BlockManager)
 end
