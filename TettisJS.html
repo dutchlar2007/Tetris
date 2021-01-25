@@ -1,0 +1,236 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        
+        <style>
+            #screen{
+                background-color: black;
+            }
+        </style>
+
+
+
+    </head>
+
+    <body>
+        <canvas id ="screen" width="300" height="600">
+        </canvas>
+            
+        <script type = "text/javascript">
+            var screen = document.getElementById("screen");
+            var con = screen.getContext("2d");
+            var BACKGROUNDCOLOR = "#c0c0c0";
+            var oldtime = window.performance.now();
+            var colors = [
+                "#000000",
+                "#ff0000",
+                "#00ff00",
+                "#0000ff",
+                "#ffff00",
+                "#00ffff"
+            ]
+            
+            function getRandomInt(min, max) {
+                min = Math.ceil(min);
+                max = Math.floor(max);
+                return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+            }
+            
+            function rectBorder(block_Color, x, y, width, height) {
+                con.beginPath();
+                con.fillStyle = block_Color;
+                con.fillRect(x, y, width, height);
+                con.strokeStyle = BACKGROUNDCOLOR;
+                con.lineWidth = 2;
+                con.strokeRect(x, y, width, height);
+                con.closePath();
+            }
+            
+            class Map{
+
+                constructor() {
+                    this.map = [
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,1,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0]
+                    ];
+                    
+                    this.size = 30;
+                    this.listener = null;   
+                }
+                
+                update(dt) {
+                    
+                }
+                
+                draw() {
+                    for(var y = 0; y < this.map.length; y++){
+                        for (var x = 0; x < this.map[y].length; x++) {
+                            rectBorder(colors[this.map[y][x]], x*this.size, y*this.size, this.size, this.size);
+                        }
+                    }
+                }
+
+            }
+            
+            //=================================================
+            
+            class Block{
+                
+                constructor () {
+                    this.x = 5;
+                    this.y = 4;
+                    this.dx = [];
+                    this.dy = [];
+                    this.color = getRandomInt(0,6);
+                    this.formation();
+                }
+                
+                static dtotal = 0;
+                
+                draw () {
+                    for (var i = 0; i < 4; i++) {
+                        rectBorder(colors[this.color], this.getX(i)*map.size, this.getY(i)*map.size, map.size, map.size);
+                    }
+                }
+                
+                getX(i) { return this.x + this.dx[i]; }
+                getY(i) { return this.y + this.dy[i]; }
+                left() { this.x = this.x - 1; }
+                right() { this.x = this.x + 1; }
+                
+                clockwise() {
+                    for(var i = 1; i < 4; i++) {
+                        var dx = this.dx[i];
+                        this.dx[i] = -this.dy[i];
+                        this.dy[i] = dx;
+                    }
+                }
+
+                counterClock() {
+                    for(var i = 1; i < 4; i++) {
+                        var dx = this.dx[i];
+                        this.dx[i] = this.dy[i];
+                        this.dy[i] = -dx;
+                    }
+                }
+                
+                formation(){
+                    if ( this.color == 1) {
+                        this.dx = [0,-1,0,1];
+                        this.dy = [0,0,-1,-1];
+                    }
+                    if ( this.color == 2) {
+                        this.dx = [0,-1,0,1];
+                        this.dy = [0,-1,-1,0];
+                    }
+                    if ( this.color == 3) {
+                        this.dx = [0,-1,0,0];
+                        this.dy = [0,0,-1,-2];
+                    }
+                    if ( this.color == 4) {
+                        this.dx = [0,1,0,1];
+                        this.dy = [0,0,-1,-1];
+                    }
+                    if ( this.color == 5) {
+                        this.dx = [0,-1,1,0];
+                        this.dy = [0,0,0,-1];
+                    }
+                    if ( this.color == 6) {
+                        this.dx = [0,1,0,0];
+                        this.dy = [0,0,-1,-2];
+                    }
+                    if ( this.color == 7) {
+                        this.dx = [0,0,0,0];
+                        this.dy = [0,-1,-2,-3];
+                    }
+                }
+            }
+            
+            //=================================================
+            
+            var buttonOptions = {   
+                //'ArrowLeft'  : function() { block.onLeft();},
+                //'ArrowRight' : function() { block.onRight();},
+                ' '          : function() { block.onDrop(); },
+                //'ArrowUp'    : function() { block.onCounterClock(); },
+                //'ArrowDown'  : function() { block.onClockwise(); },
+                'ArrowUp'    : function() { block.clockwise(); },
+                'ArrowDown'  : function() { block.counterClock(); },
+                'Shift'      : function() { score.fastSpeed = .07; }
+            };
+            
+            //=================================================
+            
+            var updateable = [];
+            var drawable = [];
+            
+            //=================================================
+            
+            function keypressed(event) {
+                var key = event.key;
+                var action = buttonOptions[key];
+                if (action) { action(); }
+                block.checkBounds();
+            }
+            
+            //=================================================
+            
+            function update() {
+                var time = window.performance.now();
+                var dt = time - oldtime;
+                oldtime = time;
+                
+            }
+            
+            //=================================================
+            
+            function draw () {
+                update();
+                for (var i = 0; i < drawable.length; i++) {   
+                    drawable[i].draw();
+                }
+            }
+            
+            //=================================================
+            
+            var map = new Map();
+            var block = new Block();
+            
+            document.addEventListener("keydown", keypressed);
+            
+            //=================================================
+            
+            updateable.push(map);
+            drawable.push(map);
+            
+            drawable.push(block);
+            
+            setInterval(draw,10);
+            
+        </script>
+
+    </body>
+
+
+</html>
+
+
+
