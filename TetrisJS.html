@@ -18,7 +18,7 @@
             
         <script type = "text/javascript">
             var screen = document.getElementById("screen");
-            var con = screen.getContext("2d");
+            var con = screen.getContext("2d") ;
             var BACKGROUNDCOLOR = "#c0c0c0";
             var oldtime = window.performance.now();
             var colors = [
@@ -76,8 +76,14 @@
                     this.listener = null;   
                 }
                 
+                isFilled(x,y) {
+                    if (y < 0 || this.map.length <= y) { return true }
+                    if (x < 0 || this.map[1].length <= x ) { return true }
+                    return this.map[y][x] != 0;
+                }
+                
                 update(dt) {
-                    
+                
                 }
                 
                 draw() {
@@ -92,7 +98,22 @@
             
             //=================================================
             
-            class Block{
+            class Score {
+                
+                constructor () {
+                    this.speed = 1000;
+                    this.points = 0;
+                    this.fastSpeed = null;
+                    this.numLines = 0;
+                }
+                
+                
+                
+            }
+            
+            //=================================================
+    
+            class Block {
                 
                 constructor () {
                     this.x = 5;
@@ -122,6 +143,7 @@
                         this.dx[i] = -this.dy[i];
                         this.dy[i] = dx;
                     }
+                    this.checkBounds();
                 }
 
                 counterClock() {
@@ -130,9 +152,61 @@
                         this.dx[i] = this.dy[i];
                         this.dy[i] = -dx;
                     }
+                    this.checkBounds();
                 }
                 
-                formation(){
+                onLeft() {
+                    for (var i = 0; i < 4; i++) {
+                        var y = this.getY(i), x = this.getX(i) - 1
+                        if (map.isFilled(x,y)) {
+                            return
+                        }
+                    }
+                    this.left()
+                }
+                
+                onRight() {
+                    for (var i = 1; i < 4; i++) { 
+                        var y = this.getY(i), x = this.getX(i) + 1;
+                        if (map.isFilled(x,y)) {
+                        return
+                        }
+                    }
+                    this.right()
+                }
+
+                checkBounds () {
+                    var xmin = Math.min(...this.dx) + this.x;
+                    var xmax = Math.max(...this.dx) + this.x - 9;
+                    if (xmin < 0) { this.x -= xmin }
+                    if (xmax > 0) { this.x -= xmax }
+                }
+                
+                update(dt) {
+                    Block.dtotal = Block.dtotal + dt;
+                    var timeLimit = score.speed;
+                    if (Block.dtotal >= timeLimit) {
+                        
+                        this.y = Math.min(19, this.y + 1);
+                        Block.dtotal = 0;
+                    }
+                }
+                
+                setBlock() {
+                    for (var i = 0; i < 4; i++) {
+                        var y = this.getY(i), x = this.getX(i)
+                        if ( -1 < y && y <= map.map.length ) {
+                            if ( !map.isFilled(x, y) ) {
+                                map.map[y][x] = this.color
+                            }
+                        }
+                        if (y < -1) {
+                        
+                        }
+                    }
+                }
+                
+                formation () {
                     if ( this.color == 1) {
                         this.dx = [0,-1,0,1];
                         this.dy = [0,0,-1,-1];
@@ -166,16 +240,16 @@
             
             //=================================================
             
-            var buttonOptions = {   
-                //'ArrowLeft'  : function() { block.onLeft();},
-                //'ArrowRight' : function() { block.onRight();},
+            var buttonOptions = {
+                'ArrowLeft'  : function() { block.onLeft();},
+                'ArrowRight' : function() { block.onRight();},
                 ' '          : function() { block.onDrop(); },
                 //'ArrowUp'    : function() { block.onCounterClock(); },
                 //'ArrowDown'  : function() { block.onClockwise(); },
                 'ArrowUp'    : function() { block.clockwise(); },
                 'ArrowDown'  : function() { block.counterClock(); },
                 'Shift'      : function() { score.fastSpeed = .07; }
-            };
+            }
             
             //=================================================
             
@@ -188,7 +262,6 @@
                 var key = event.key;
                 var action = buttonOptions[key];
                 if (action) { action(); }
-                block.checkBounds();
             }
             
             //=================================================
@@ -197,6 +270,7 @@
                 var time = window.performance.now();
                 var dt = time - oldtime;
                 oldtime = time;
+                for (var j = 0; j < updateable.length; j++) { updateable[j].update(dt); }
                 
             }
             
@@ -210,7 +284,7 @@
             }
             
             //=================================================
-            
+            var score = new Score();
             var map = new Map();
             var block = new Block();
             
@@ -221,6 +295,7 @@
             updateable.push(map);
             drawable.push(map);
             
+            updateable.push(block);
             drawable.push(block);
             
             setInterval(draw,10);
