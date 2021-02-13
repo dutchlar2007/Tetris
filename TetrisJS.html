@@ -36,6 +36,14 @@
                 return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
             }
             
+            function newBlock() {
+                updateable.pop();
+                drawable.pop();
+                block = new Block();
+                updateable.push(block);
+                drawable.push(block);
+            }
+
             function rectBorder(block_Color, x, y, width, height) {
                 con.beginPath();
                 con.fillStyle = block_Color;
@@ -117,10 +125,10 @@
                 
                 constructor () {
                     this.x = 5;
-                    this.y = 4;
+                    this.y = 0;
                     this.dx = [];
                     this.dy = [];
-                    this.color = getRandomInt(0,6);
+                    this.color = getRandomInt(1,6);
                     this.formation();
                 }
                 
@@ -186,10 +194,19 @@
                     Block.dtotal = Block.dtotal + dt;
                     var timeLimit = score.speed;
                     if (Block.dtotal >= timeLimit) {
-                        
-                        this.y = Math.min(19, this.y + 1);
+                        if (!this.collision()) {
+                            this.y = Math.min(19, this.y + 1);
+                            Block.dtotal = 0;
+                            return;
+                        }
                         Block.dtotal = 0;
+                     
+                        if (this.collision()) {
+                           this.setBlock();
+                        }
                     }
+                    
+                    
                 }
                 
                 setBlock() {
@@ -201,7 +218,21 @@
                             }
                         }
                         if (y < -1) {
-                        
+                            return 'gameOver';
+                        } else { newBlock(); }
+                    }
+                }
+                
+                collision() {
+                    for (var i = 0; i < 4; i++) {
+                        if (this.getY(i) >= 19) {
+                            return true;
+                        }
+                    }
+                    for (var i = 0; i < 4; i++) {
+                        var y = this.getY(i), x = this.getX(i);
+                        if (map.isFilled(x,y+1) || map.isFilled(x,y)) {
+                            return true;
                         }
                     }
                 }
