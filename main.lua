@@ -99,11 +99,13 @@ local map = {
 }
 
 ---------------------------------------------------------------
+
 function map:lineDropListener(listener)
   self.listener = listener
 end
 
 ---------------------------------------------------------------
+
 function map:isFilled(x,y)
   if y < 1 or #map < y then return false end
   if x < 1 or #map[1] < x then return false end
@@ -111,6 +113,7 @@ function map:isFilled(x,y)
 end
 
 ---------------------------------------------------------------
+
 function map:isLineFilled(y)
   for x = 1, #map[y] do
     if not map:isFilled(x,y) then return false end

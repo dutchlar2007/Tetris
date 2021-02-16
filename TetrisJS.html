@@ -27,7 +27,9 @@
                 "#00ff00",
                 "#0000ff",
                 "#ffff00",
-                "#00ffff"
+                "#00ffff",
+                "#ff8800",
+                "#0088ff"
             ]
             
             function getRandomInt(min, max) {
@@ -75,7 +77,7 @@
                     [0,0,0,0,0,0,0,0,0,0],
                     [0,0,0,0,0,0,0,0,0,0],
                     [0,0,0,0,0,0,0,0,0,0],
-                    [0,0,1,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0],
                     [0,0,0,0,0,0,0,0,0,0],
                     [0,0,0,0,0,0,0,0,0,0]
                     ];
@@ -85,13 +87,29 @@
                 }
                 
                 isFilled(x,y) {
-                    if (y < 0 || this.map.length <= y) { return true }
-                    if (x < 0 || this.map[1].length <= x ) { return true }
+                    if (this.map.length <= y) { return true }
+                    if (x < 0 || this.map[1].length <= x ) { return true; }
+                    if (y < 0) { return false; }
                     return this.map[y][x] != 0;
                 }
                 
-                update(dt) {
+                isLineFilled(y) {
+                    for (var x = 0; x <= this.map[y].length; x++) {
+                        if (!map.isFilled(x,y)) { return false; }
+                    }
+                    return true;
+                }
+
                 
+                update(dt) {
+                    var dropped = 0;
+                    for (var y = 0; y < 20; y++) {    
+                        if (this.isLineFilled(y)) {
+                            dropped += 1;
+                            for (var i = y; i > 1; i--) { this.map[i] = this.map[i-1]; }
+                            this.map[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];  
+                        }
+                    }
                 }
                 
                 draw() {
@@ -101,7 +119,6 @@
                         }
                     }
                 }
-
             }
             
             //=================================================
@@ -109,7 +126,7 @@
             class Score {
                 
                 constructor () {
-                    this.speed = 1000;
+                    this.speed = 200;
                     this.points = 0;
                     this.fastSpeed = null;
                     this.numLines = 0;
@@ -128,7 +145,7 @@
                     this.y = 0;
                     this.dx = [];
                     this.dy = [];
-                    this.color = getRandomInt(1,6);
+                    this.color = getRandomInt(1,8);
                     this.formation();
                 }
                 
@@ -153,7 +170,7 @@
                     }
                     this.checkBounds();
                 }
-
+                
                 counterClock() {
                     for(var i = 1; i < 4; i++) {
                         var dx = this.dx[i];
@@ -163,9 +180,31 @@
                     this.checkBounds();
                 }
                 
+                onClockwise() {
+                    this.clockwise();
+                    for (var i = 0; i < 4; i++) {
+                        var y = this.getY(i), x = this.getX(i) - 1;
+                        if (map.isFilled(x,y)) {
+                            this.counterClock();
+                            return
+                        }
+                    }
+                }
+                
+                onCounterClock() {
+                    this.counterClock();
+                    for (var i = 0; i < 4; i++) {
+                        var y = this.getY(i), x = this.getX(i) - 1;
+                        if (map.isFilled(x,y)) {
+                            this.clockwise();
+                            return;
+                        }
+                    }
+                }
+                
                 onLeft() {
                     for (var i = 0; i < 4; i++) {
-                        var y = this.getY(i), x = this.getX(i) - 1
+                        var y = this.getY(i), x = this.getX(i) - 1;
                         if (map.isFilled(x,y)) {
                             return
                         }
@@ -205,8 +244,6 @@
                            this.setBlock();
                         }
                     }
-                    
-                    
                 }
                 
                 setBlock() {
@@ -275,10 +312,10 @@
                 'ArrowLeft'  : function() { block.onLeft();},
                 'ArrowRight' : function() { block.onRight();},
                 ' '          : function() { block.onDrop(); },
-                //'ArrowUp'    : function() { block.onCounterClock(); },
-                //'ArrowDown'  : function() { block.onClockwise(); },
-                'ArrowUp'    : function() { block.clockwise(); },
-                'ArrowDown'  : function() { block.counterClock(); },
+                'ArrowUp'    : function() { block.onCounterClock(); },
+                'ArrowDown'  : function() { block.onClockwise(); },
+                //'ArrowUp'    : function() { block.clockwise(); },
+                //'ArrowDown'  : function() { block.counterClock(); },
                 'Shift'      : function() { score.fastSpeed = .07; }
             }
             
@@ -329,7 +366,7 @@
             updateable.push(block);
             drawable.push(block);
             
-            setInterval(draw,10);
+            setInterval(draw,1);
             
         </script>
 
