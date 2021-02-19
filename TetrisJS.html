@@ -1,21 +1,31 @@
 <!DOCTYPE HTML>
 <html>
     <head>
-        
         <style>
             #screen{
                 background-color: black;
             }
+            
+            .page {
+                display: flex;
+                justify-content: center;
+            }
+            
+            #score {
+                font-size: large;
+            }
         </style>
-
-
-
     </head>
 
-    <body>
-        <canvas id ="screen" width="300" height="600">
-        </canvas>
-            
+    <body class = 'page'>
+        <div></div>
+        <div>    
+            <canvas id ="screen" width="300" height="600">
+            </canvas>
+        </div>
+        
+        <div id = "score">
+        </div>
         <script type = "text/javascript">
             var screen = document.getElementById("screen");
             var con = screen.getContext("2d") ;
@@ -29,7 +39,7 @@
                 "#ffff00",
                 "#00ffff",
                 "#ff8800",
-                "#0088ff"
+                "#ff00ff"
             ]
             
             function getRandomInt(min, max) {
@@ -110,6 +120,7 @@
                             this.map[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];  
                         }
                     }
+                    score.points += score.scoring[dropped];
                 }
                 
                 draw() {
@@ -130,9 +141,15 @@
                     this.points = 0;
                     this.fastSpeed = null;
                     this.numLines = 0;
+                    this.scoring = [0, 100, 300, 600, 1200];
+                    this.blocks = 0;
+                    
                 }
                 
-                
+                draw() {
+                    var elem = document.getElementById('score');
+                    elem.innerHTML = 'Score = ' + this.points + '   Blocks: ' + this.blocks;
+                }
                 
             }
             
@@ -192,18 +209,22 @@
                 }
                 
                 onCounterClock() {
+                    clearInterval(draw);
                     this.counterClock();
                     for (var i = 0; i < 4; i++) {
                         var y = this.getY(i), x = this.getX(i) - 1;
                         if (map.isFilled(x,y)) {
                             this.clockwise();
+                            setInterval(draw,1);
                             return;
                         }
                     }
+                    setInterval(draw, 1);
                 }
                 
                 onLeft() {
                     for (var i = 0; i < 4; i++) {
+                        
                         var y = this.getY(i), x = this.getX(i) - 1;
                         if (map.isFilled(x,y)) {
                             return
@@ -221,7 +242,14 @@
                     }
                     this.right()
                 }
-
+                
+                onDrop() {
+                    while(!this.collision()) {
+                        this.y = Math.min(19, this.y + 1);
+                    }
+                    this.setBlock();
+                }
+                
                 checkBounds () {
                     var xmin = Math.min(...this.dx) + this.x;
                     var xmax = Math.max(...this.dx) + this.x - 9;
@@ -247,17 +275,20 @@
                 }
                 
                 setBlock() {
+                    var set = 0;
                     for (var i = 0; i < 4; i++) {
                         var y = this.getY(i), x = this.getX(i)
                         if ( -1 < y && y <= map.map.length ) {
                             if ( !map.isFilled(x, y) ) {
                                 map.map[y][x] = this.color
+                                set = 1
                             }
                         }
-                        if (y < -1) {
+                        if (y < 0) {
                             return 'gameOver';
-                        } else { newBlock(); }
+                        }
                     }
+                    if (set == 1) { newBlock(); score.blocks++;}
                 }
                 
                 collision() {
@@ -359,6 +390,7 @@
             document.addEventListener("keydown", keypressed);
             
             //=================================================
+            drawable.push(score);
             
             updateable.push(map);
             drawable.push(map);
@@ -369,7 +401,9 @@
             setInterval(draw,1);
             
         </script>
-
+        
+        
+        
     </body>
 
 
