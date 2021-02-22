@@ -162,7 +162,8 @@
                     this.y = 0;
                     this.dx = [];
                     this.dy = [];
-                    this.color = getRandomInt(1,8);
+                    //this.color = getRandomInt(1,8);
+                    this.color = 7;
                     this.formation();
                 }
                 
@@ -198,19 +199,24 @@
                 }
                 
                 onClockwise() {
+                    clearInterval(draw);
                     this.clockwise();
+                    this.checkBounds();
                     for (var i = 0; i < 4; i++) {
                         var y = this.getY(i), x = this.getX(i) - 1;
                         if (map.isFilled(x,y)) {
                             this.counterClock();
+                            setInterval(draw,1);
                             return
                         }
                     }
+                    setInterval(draw, 1);
                 }
                 
                 onCounterClock() {
                     clearInterval(draw);
                     this.counterClock();
+                    this.checkBounds();
                     for (var i = 0; i < 4; i++) {
                         var y = this.getY(i), x = this.getX(i) - 1;
                         if (map.isFilled(x,y)) {
@@ -231,6 +237,7 @@
                         }
                     }
                     this.left()
+                    this.checkBounds();
                 }
                 
                 onRight() {
@@ -240,7 +247,8 @@
                         return
                         }
                     }
-                    this.right()
+                    this.right();
+                    this.checkBounds();
                 }
                 
                 onDrop() {
@@ -250,7 +258,7 @@
                     this.setBlock();
                 }
                 
-                checkBounds () {
+                checkBounds() {
                     var xmin = Math.min(...this.dx) + this.x;
                     var xmax = Math.max(...this.dx) + this.x - 9;
                     if (xmin < 0) { this.x -= xmin }
