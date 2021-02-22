@@ -107,6 +107,7 @@
                     for (var x = 0; x <= this.map[y].length; x++) {
                         if (!map.isFilled(x,y)) { return false; }
                     }
+                    score.line +=1;
                     return true;
                 }
 
@@ -116,7 +117,7 @@
                     for (var y = 0; y < 20; y++) {    
                         if (this.isLineFilled(y)) {
                             dropped += 1;
-                            for (var i = y; i > 1; i--) { this.map[i] = this.map[i-1]; }
+                            for (var i = y; i > 0; i--) { this.map[i] = this.map[i-1]; }
                             this.map[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];  
                         }
                     }
@@ -137,18 +138,19 @@
             class Score {
                 
                 constructor () {
-                    this.speed = 200;
+                    this.speed = 0;
                     this.points = 0;
-                    this.fastSpeed = null;
+                    this.fastSpeed = 10;
                     this.numLines = 0;
                     this.scoring = [0, 100, 300, 600, 1200];
                     this.blocks = 0;
-                    
+                    this.line = 0;
+                    this.allert = 0;
                 }
                 
                 draw() {
                     var elem = document.getElementById('score');
-                    elem.innerHTML = 'Score = ' + this.points + '   Blocks: ' + this.blocks;
+                    elem.innerHTML = 'Score = ' + this.points + '   Blocks: ' + this.blocks + '     ' + this.line;
                 }
                 
             }
@@ -158,12 +160,11 @@
             class Block {
                 
                 constructor () {
-                    this.x = 5;
+                    this.x = 4;
                     this.y = 0;
                     this.dx = [];
                     this.dy = [];
-                    //this.color = getRandomInt(1,8);
-                    this.color = 7;
+                    this.color = getRandomInt(1,8);
                     this.formation();
                 }
                 
@@ -181,7 +182,7 @@
                 right() { this.x = this.x + 1; }
                 
                 clockwise() {
-                    for(var i = 1; i < 4; i++) {
+                    for(var i = 0; i < 4; i++) {
                         var dx = this.dx[i];
                         this.dx[i] = -this.dy[i];
                         this.dy[i] = dx;
@@ -190,7 +191,7 @@
                 }
                 
                 counterClock() {
-                    for(var i = 1; i < 4; i++) {
+                    for(var i = 0; i < 4; i++) {
                         var dx = this.dx[i];
                         this.dx[i] = this.dy[i];
                         this.dy[i] = -dx;
@@ -241,7 +242,7 @@
                 }
                 
                 onRight() {
-                    for (var i = 1; i < 4; i++) { 
+                    for (var i = 0; i < 4; i++) { 
                         var y = this.getY(i), x = this.getX(i) + 1;
                         if (map.isFilled(x,y)) {
                         return
@@ -267,6 +268,14 @@
                 
                 update(dt) {
                     Block.dtotal = Block.dtotal + dt;
+                    score.speed = 700 - score.line*2
+                    if (score.speed < score.fastSpeed) {
+                        score.fastSpeed = score.speed;
+                        score.allert = 0;
+                    }
+                    if (score.allert == 1) {
+                        score.speed = score.fastSpeed;
+                    }
                     var timeLimit = score.speed;
                     if (Block.dtotal >= timeLimit) {
                         if (!this.collision()) {
@@ -280,6 +289,7 @@
                            this.setBlock();
                         }
                     }
+                    score.allert = 0;
                 }
                 
                 setBlock() {
@@ -340,7 +350,7 @@
                     }
                     if ( this.color == 7) {
                         this.dx = [0,0,0,0];
-                        this.dy = [0,-1,-2,-3];
+                        this.dy = [1,0,-1,-2];
                     }
                 }
             }
@@ -355,7 +365,7 @@
                 'ArrowDown'  : function() { block.onClockwise(); },
                 //'ArrowUp'    : function() { block.clockwise(); },
                 //'ArrowDown'  : function() { block.counterClock(); },
-                'Shift'      : function() { score.fastSpeed = .07; }
+                'Shift'      : function() { score.allert = 1; }
             }
             
             //=================================================
