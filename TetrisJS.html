@@ -2,6 +2,11 @@
 <html>
     <head>
         <style>
+            
+            body {
+                background-color: royalblue;
+            }
+            
             #screen{
                 background-color: black;
             }
@@ -12,7 +17,8 @@
             }
             
             #score {
-                font-size: large;
+                
+                font-size: 50px;
             }
         </style>
     </head>
@@ -24,8 +30,8 @@
             </canvas>
         </div>
         
-        <div id = "score">
-        </div>
+        <div id = "score"></div>
+        
         <script type = "text/javascript">
             var screen = document.getElementById("screen");
             var con = screen.getContext("2d") ;
@@ -37,9 +43,9 @@
                 "#00ff00",
                 "#0000ff",
                 "#ffff00",
-                "#00ffff",
+                "#ff00ff",
                 "#ff8800",
-                "#ff00ff"
+                "#00ffff"
             ]
             
             function getRandomInt(min, max) {
@@ -97,9 +103,10 @@
                 }
                 
                 isFilled(x,y) {
-                    if (this.map.length <= y) { return true }
+                    if (this.map.length <= y) { return true; }
                     if (x < 0 || this.map[1].length <= x ) { return true; }
                     if (y < 0) { return false; }
+                    
                     return this.map[y][x] != 0;
                 }
                 
@@ -111,7 +118,6 @@
                     return true;
                 }
 
-                
                 update(dt) {
                     var dropped = 0;
                     for (var y = 0; y < 20; y++) {    
@@ -150,7 +156,7 @@
                 
                 draw() {
                     var elem = document.getElementById('score');
-                    elem.innerHTML = 'Score = ' + this.points + '   Blocks: ' + this.blocks + '     ' + this.line;
+                    elem.innerHTML = 'Score = ' + this.points;
                 }
                 
             }
@@ -160,8 +166,8 @@
             class Block {
                 
                 constructor () {
-                    this.x = 4;
-                    this.y = 0;
+                    this.x = 5;
+                    this.y = -1;
                     this.dx = [];
                     this.dy = [];
                     this.color = getRandomInt(1,8);
@@ -170,7 +176,7 @@
                 
                 static dtotal = 0;
                 
-                draw () {
+                draw() {
                     for (var i = 0; i < 4; i++) {
                         rectBorder(colors[this.color], this.getX(i)*map.size, this.getY(i)*map.size, map.size, map.size);
                     }
@@ -181,51 +187,59 @@
                 left() { this.x = this.x - 1; }
                 right() { this.x = this.x + 1; }
                 
+                /**
+                 * Rotate the block clockwise.
+                 */
                 clockwise() {
-                    for(var i = 0; i < 4; i++) {
+                    for (var i = 0; i < 4; i++) {
                         var dx = this.dx[i];
                         this.dx[i] = -this.dy[i];
                         this.dy[i] = dx;
                     }
-                    this.checkBounds();
                 }
                 
+                /**
+                 * Rotate the block counterclockwise.
+                 */
                 counterClock() {
-                    for(var i = 0; i < 4; i++) {
+                    for (var i = 0; i < 4; i++) {
                         var dx = this.dx[i];
                         this.dx[i] = this.dy[i];
                         this.dy[i] = -dx;
                     }
-                    this.checkBounds();
                 }
                 
                 onClockwise() {
                     clearInterval(draw);
+                    
                     this.clockwise();
-                    this.checkBounds();
-                    for (var i = 0; i < 4; i++) {
-                        var y = this.getY(i), x = this.getX(i) - 1;
-                        if (map.isFilled(x,y)) {
-                            this.counterClock();
-                            setInterval(draw,1);
-                            return
-                        }
+                    var outofbounds = this.isOutOfBounds();
+                    if (outofbounds) { 
+                       this.x -= outofbounds; 
                     }
+                    
+                    if (this.isOnFilledBlock()) {
+                        this.x += outofbounds;
+                        this.counterClock();
+                    }
+                    
                     setInterval(draw, 1);
                 }
                 
                 onCounterClock() {
                     clearInterval(draw);
+                    
                     this.counterClock();
-                    this.checkBounds();
-                    for (var i = 0; i < 4; i++) {
-                        var y = this.getY(i), x = this.getX(i) - 1;
-                        if (map.isFilled(x,y)) {
-                            this.clockwise();
-                            setInterval(draw,1);
-                            return;
-                        }
+                    var outofbounds = this.isOutOfBounds();
+                    if (outofbounds) { 
+                        this.x -= outofbounds; 
                     }
+                    
+                    if (this.isOnFilledBlock()) {
+                        this.x += outofbounds;
+                        this.clockwise();
+                    }
+                    
                     setInterval(draw, 1);
                 }
                 
@@ -259,11 +273,37 @@
                     this.setBlock();
                 }
                 
-                checkBounds() {
+                isOnFilledBlock() {
+                    for (var i = 0; i < 4; i++) {
+                        var y = this.getY(i), x = this.getX(i);
+                        
+                        if (map.isFilled(x,y)) { 
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                
+                /**
+                 * Indicate if block is out of bounds. If so give the distance
+                 * x out of bounds.
+                 *
+                 * @return False if in block is in bounds. Otherwise return the
+                 *         distance x it is out of bounds.
+                 */
+                isOutOfBounds() {
                     var xmin = Math.min(...this.dx) + this.x;
+                    if (xmin < 0) return xmin;
+                    
                     var xmax = Math.max(...this.dx) + this.x - 9;
-                    if (xmin < 0) { this.x -= xmin }
-                    if (xmax > 0) { this.x -= xmax }
+                    if (xmax > 0) return xmax;
+                    
+                    return false;
+                }
+                
+                checkBounds() {
+                    var outOfBounds = this.isOutOfBounds();
+                    if (outOfBounds) { this.x -= outOfBounds; }
                 }
                 
                 update(dt) {
@@ -334,7 +374,7 @@
                     }
                     if ( this.color == 3) {
                         this.dx = [0,-1,0,0];
-                        this.dy = [0,0,-1,-2];
+                        this.dy = [1,1,0,-1];
                     }
                     if ( this.color == 4) {
                         this.dx = [0,1,0,1];
@@ -346,7 +386,7 @@
                     }
                     if ( this.color == 6) {
                         this.dx = [0,1,0,0];
-                        this.dy = [0,0,-1,-2];
+                        this.dy = [1,1,0,-1];
                     }
                     if ( this.color == 7) {
                         this.dx = [0,0,0,0];
