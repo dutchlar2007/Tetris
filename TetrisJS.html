@@ -16,10 +16,19 @@
                 justify-content: center;
             }
             
-            #score {
-                
-                font-size: 50px;
+            .stats {
+                display: flex;
+                flex-direction: column;
+                font-family: Copperplate, Papyrus, fantasy;                
+                font-size: 40px;
             }
+            
+            .rowflex {
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
+            }
+            
         </style>
     </head>
 
@@ -30,7 +39,11 @@
             </canvas>
         </div>
         
-        <div id = "score"></div>
+        <div class="stats">
+          <div class="rowflex"> Level: <div id = "level"></div></div>
+          <div class="rowflex"> Score: <div id = "score"></div></div>
+          <div class="rowflex"> Lines: <div id = "lines"></div></div>
+        </div>
         
         <script type = "text/javascript">
             var screen = document.getElementById("screen");
@@ -127,7 +140,7 @@
                             this.map[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];  
                         }
                     }
-                    score.points += score.scoring[dropped];
+                    score.scoreLines(dropped);
                 }
                 
                 draw() {
@@ -155,8 +168,19 @@
                 }
                 
                 draw() {
-                    var elem = document.getElementById('score');
-                    elem.innerHTML = 'Score = ' + this.points;
+                    document.getElementById('score').innerHTML = this.points;
+                }
+                
+                /**
+                 * Increment the score based on the number of lines that were dropped.
+                 *
+                 * @param dropped The number of lines that were cleared.
+                 */
+                scoreLines(dropped) {
+                    this.points += this.scoring[dropped];
+                    this.numLines += dropped;
+
+                    document.getElementById('lines').innerHTML = this.numLines;
                 }
                 
             }
