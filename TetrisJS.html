@@ -1,39 +1,11 @@
 <!DOCTYPE HTML>
 <html>
     <head>
-        <style>
-            
-            body {
-                background-color: royalblue;
-            }
-            
-            #screen{
-                background-color: black;
-            }
-            
-            .page {
-                display: flex;
-                justify-content: center;
-            }
-            
-            .stats {
-                display: flex;
-                flex-direction: column;
-                font-family: Copperplate, Papyrus, fantasy;                
-                font-size: 40px;
-            }
-            
-            .rowflex {
-              display: flex;
-              flex-direction: row;
-              justify-content: space-between;
-            }
-            
-        </style>
+        <link rel="stylesheet" href="style.css">
     </head>
 
     <body class = 'page'>
-        <div></div>
+        <div> <button onclick="startUp();">New Game</button>&nbsp;&nbsp;&nbsp;&nbsp;</div>
         <div>    
             <canvas id ="screen" width="300" height="600">
             </canvas>
@@ -332,7 +304,7 @@
                 
                 update(dt) {
                     Block.dtotal = Block.dtotal + dt;
-                    score.speed = 700 - score.line*2
+                    score.speed = 700 - score.line*5;
                     if (score.speed < score.fastSpeed) {
                         score.fastSpeed = score.speed;
                         score.allert = 0;
@@ -465,22 +437,30 @@
             }
             
             //=================================================
-            var score = new Score();
-            var map = new Map();
-            var block = new Block();
             
-            document.addEventListener("keydown", keypressed);
+            var score;
+            var map;
+            var block;
             
             //=================================================
-            drawable.push(score);
             
-            updateable.push(map);
-            drawable.push(map);
-            
-            updateable.push(block);
-            drawable.push(block);
-            
-            setInterval(draw,1);
+            function startUp() {
+                score = new Score();
+                map = new Map();
+                block = new Block();
+                
+                document.addEventListener("keydown", keypressed);
+                
+                drawable.push(score);
+                
+                updateable.push(map);
+                drawable.push(map);
+                
+                updateable.push(block);
+                drawable.push(block);
+                
+                setInterval(draw,1);
+            }
             
         </script>
         
