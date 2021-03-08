@@ -5,7 +5,7 @@
     </head>
 
     <body class = 'horizontal'>
-        <div> <button onclick="startUp();">New Game</button>&nbsp;&nbsp;&nbsp;&nbsp;</div>
+        <div> <a href = 'index.html'>Homepage</a>&nbsp;&nbsp;&nbsp;&nbsp;<button onclick="startUp();">New Game</button>&nbsp;&nbsp;&nbsp;&nbsp;</div>
         <div>    
             <canvas id ="screen" width="300" height="600">
             </canvas>
@@ -304,7 +304,7 @@
                 
                 update(dt) {
                     Block.dtotal = Block.dtotal + dt;
-                    score.speed = 700 - score.line*5;
+                    score.speed = 700 - score.line*8;
                     if (score.speed < score.fastSpeed) {
                         score.fastSpeed = score.speed;
                         score.allert = 0;
