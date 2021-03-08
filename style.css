@@ -1,0 +1,26 @@
+
+body {
+    background-color: royalblue;
+}
+
+#screen{
+    background-color: black;
+}
+
+.page {
+    display: flex;
+    justify-content: center;
+}
+
+.stats {
+    display: flex;
+    flex-direction: column;
+    font-family: Copperplate, Papyrus, fantasy;                
+    font-size: 40px;
+}
+
+.rowflex {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
