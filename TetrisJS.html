@@ -4,7 +4,7 @@
         <link rel="stylesheet" href="style.css">
     </head>
 
-    <body class = 'page'>
+    <body class = 'horizontal'>
         <div> <button onclick="startUp();">New Game</button>&nbsp;&nbsp;&nbsp;&nbsp;</div>
         <div>    
             <canvas id ="screen" width="300" height="600">
@@ -12,9 +12,9 @@
         </div>
         
         <div class="stats">
-          <div class="rowflex"> Level: <div id = "level"></div></div>
-          <div class="rowflex"> Score: <div id = "score"></div></div>
-          <div class="rowflex"> Lines: <div id = "lines"></div></div>
+          <div class="rowflex"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Level: <div id = "level"></div></div>
+          <div class="rowflex"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Score: <div id = "score"></div></div>
+          <div class="rowflex"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Lines: <div id = "lines"></div></div>
         </div>
         
         <script type = "text/javascript">
@@ -437,7 +437,7 @@
             }
             
             //=================================================
-            
+            var cleanUp = 0;
             var score;
             var map;
             var block;
@@ -445,10 +445,15 @@
             //=================================================
             
             function startUp() {
+                updateable = [];
+                drawable = [];
                 score = new Score();
                 map = new Map();
                 block = new Block();
-                
+                if (cleanUp == 1) {
+                    document.removeEventListener('keydown', keypressed);
+                    clearInterval(draw);
+                }
                 document.addEventListener("keydown", keypressed);
                 
                 drawable.push(score);
@@ -460,6 +465,7 @@
                 drawable.push(block);
                 
                 setInterval(draw,1);
+                cleanUp = 1;
             }
             
         </script>

@@ -1,14 +1,21 @@
 
 body {
-    background-color: royalblue;
+    background-color: rgba(250, 128, 114, 0.705);
 }
 
 #screen{
     background-color: black;
 }
 
+.horizontal {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
 .page {
     display: flex;
+    flex-direction: column;
     justify-content: center;
 }
 
